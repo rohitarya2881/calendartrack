@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Dynamic Monthly Productivity Planner & Expanded Sticker Generator</title>
@@ -498,82 +498,182 @@
     @page { size: A4 portrait; margin: 6mm; }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #000; }
     body { margin: 0; padding: 0; background: #fff; }
-    .no-print { text-align: center; padding: 12px; background: #f8f9fa; border-bottom: 1px solid #ddd; margin-bottom: 10px; }
-    .no-print button { padding: 8px 16px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
+    .no-print { text-align: center; padding: 12px; background: #f8f9fa; border-bottom: 1px solid #ddd; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .no-print button { padding: 8px 16px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 9.5pt; }
+    .no-print button.secondary { background: #6f42c1; }
+    .no-print button.ghost { background: #666; }
+    .no-print select { padding: 7px 10px; font-size: 9.5pt; border: 1px solid #ccc; border-radius: 4px; max-width: 260px; }
+    .no-print label { font-size: 9.5pt; font-weight: bold; }
     .sheet { width: 196mm; margin: 0 auto; padding: 2mm; display: flex; flex-direction: column; gap: 6mm; }
     .section-title { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 2px; margin-bottom: 6px; }
     .sticker-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
     .sticker { width: 18mm; height: 18mm; border: 1px dashed #aaa; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .sticker.square { border-radius: 4px; }
-    .sticker.badge { width: 22mm; height: 10mm; border-radius: 8px; border: 1.5px solid #000; font-size: 6pt; font-weight: bold; letter-spacing: 0.3px; }
+    .sticker.badge { width: 22mm; height: 10mm; border-radius: 8px; border: 1.5px solid #000; font-size: 6pt; font-weight: bold; letter-spacing: 0.3px; flex-direction: row; gap: 3px; }
     .icon { font-size: 10pt; line-height: 1; }
     .label { font-size: 4.5pt; font-weight: bold; margin-top: 1px; text-transform: uppercase; }
     .sticker.dark { background: #000; color: #fff; border: none; }
     .sticker.dark * { color: #fff; }
-    @media print { .no-print { display: none !important; } .sheet { padding: 0; } }
+    #singleView { display: none; }
+    .single-heading { text-align: center; font-size: 9pt; font-weight: bold; margin: 4mm 0; text-transform: uppercase; letter-spacing: 1px; }
+    .single-grid { display: grid; justify-content: center; align-content: center; }
+    @media print {
+      .no-print { display: none !important; }
+      .sheet { padding: 0; }
+      .single-heading { display: none; }
+      #catalogView.hide-for-print { display: none; }
+    }
   </style>
 </head>
 <body>
   <div class="no-print">
-    <button onclick="window.print()">🖨️ Print 60+ Stickers (A4 Label Paper)</button>
+    <span id="catalogControls">
+      <button onclick="window.print()">🖨️ Print Full Catalog</button>
+    </span>
+    <label>Pick a sticker:</label>
+    <select id="stickerPicker"></select>
+    <button class="secondary" onclick="showSingle()">🔁 Fill Whole Page With It</button>
+    <button class="ghost" id="backBtn" style="display:none;" onclick="showCatalog()">📋 Back to Catalog</button>
+    <button class="secondary" id="printSingleBtn" style="display:none;" onclick="window.print()">🖨️ Print This Page</button>
   </div>
-  <div class="sheet">
-    <div>
-      <div class="section-title">1. Evaluation & Reaction Icons</div>
-      <div class="sticker-grid">
-        <div class="sticker"><span class="icon">👍</span><span class="label">GOOD</span></div>
-        <div class="sticker dark"><span class="icon">💯</span><span class="label">PERFECT</span></div>
-        <div class="sticker"><span class="icon">✅</span><span class="label">DONE</span></div>
-        <div class="sticker"><span class="icon">❌</span><span class="label">FAIL</span></div>
-        <div class="sticker"><span class="icon">🎯</span><span class="label">TARGET</span></div>
-        <div class="sticker dark"><span class="icon">🔥</span><span class="label">STREAK</span></div>
-        <div class="sticker"><span class="icon">⭐</span><span class="label">WIN</span></div>
-        <div class="sticker"><span class="icon">🏆</span><span class="label">TOP SCORE</span></div>
-        <div class="sticker"><span class="icon">⚠️</span><span class="label">MISTAKE</span></div>
-        <div class="sticker"><span class="icon">🚫</span><span class="label">NO PHONE</span></div>
-        <div class="sticker"><span class="icon">📌</span><span class="label">FOCUS</span></div>
-        <div class="sticker"><span class="icon">💡</span><span class="label">REVISE</span></div>
-        <div class="sticker"><span class="icon">⌛</span><span class="label">TIMED</span></div>
-        <div class="sticker"><span class="icon">📈</span><span class="label">GROWTH</span></div>
-        <div class="sticker"><span class="icon">⚡</span><span class="label">FAST</span></div>
-        <div class="sticker dark"><span class="icon">👑</span><span class="label">BEST DAY</span></div>
-      </div>
-    </div>
-    <div>
-      <div class="section-title">2. Subjects & Exam Tags</div>
-      <div class="sticker-grid" style="grid-template-columns: repeat(6, 1fr);">
-        <div class="sticker badge">🔬 SCIENCE</div>
-        <div class="sticker badge">📐 MATHS</div>
-        <div class="sticker badge">🧩 REASONING</div>
-        <div class="sticker badge">🌍 GK / GS</div>
-        <div class="sticker badge">📖 ENGLISH</div>
-        <div class="sticker badge">📰 CURR. AFFAIRS</div>
-        <div class="sticker badge dark">📝 MOCK TEST</div>
-        <div class="sticker badge dark">📄 PYQ PAPER</div>
-        <div class="sticker badge">📊 FULL MOCK</div>
-        <div class="sticker badge">🎯 CH. TEST</div>
-        <div class="sticker badge dark">🔁 REVISION</div>
-        <div class="sticker badge">🧠 FORMULA</div>
-      </div>
-    </div>
-    <div>
-      <div class="section-title">3. Hours & Habits Trackers</div>
-      <div class="sticker-grid">
-        <div class="sticker square"><span class="icon">📚</span><span class="label">4+ HRS</span></div>
-        <div class="sticker square"><span class="icon">📚</span><span class="label">6+ HRS</span></div>
-        <div class="sticker square dark"><span class="icon">📚</span><span class="label">8+ HRS</span></div>
-        <div class="sticker square dark"><span class="icon">📚</span><span class="label">10+ HRS</span></div>
-        <div class="sticker square"><span class="icon">📱</span><span class="label">&lt;1 HR</span></div>
-        <div class="sticker square"><span class="icon">📱</span><span class="label">&lt;2 HRS</span></div>
-        <div class="sticker square"><span class="icon">⏰</span><span class="label">5 AM CLUB</span></div>
-        <div class="sticker square"><span class="icon">🌙</span><span class="label">NIGHT STUDY</span></div>
-        <div class="sticker square"><span class="icon">☕</span><span class="label">BREAK</span></div>
-        <div class="sticker square"><span class="icon">💧</span><span class="label">HYDRATE</span></div>
-        <div class="sticker square"><span class="icon">🏃</span><span class="label">HEALTH</span></div>
-        <div class="sticker square dark"><span class="icon">🎯</span><span class="label">ALL DONE</span></div>
-      </div>
-    </div>
+
+  <div id="catalogView" class="sheet"></div>
+  <div id="singleView">
+    <div class="single-heading" id="singleHeading"></div>
+    <div class="single-grid" id="singleGrid"></div>
   </div>
+
+  <script>
+    // Sticker catalog data — add more items here anytime, everything below builds itself from this list.
+    const CATEGORIES = [
+      {
+        title: "1. Evaluation & Reaction Icons",
+        type: "circle",
+        cols: 8,
+        items: [
+          ["👍","GOOD"], ["💯","PERFECT",1], ["✅","DONE"], ["❌","FAIL"],
+          ["🎯","TARGET"], ["🔥","STREAK",1], ["⭐","WIN"], ["🏆","TOP SCORE"],
+          ["⚠️","MISTAKE"], ["🚫","NO PHONE"], ["📌","FOCUS"], ["💡","REVISE"],
+          ["⌛","TIMED"], ["📈","GROWTH"], ["⚡","FAST"], ["👑","BEST DAY",1],
+          ["🚀","LAUNCH"], ["🎉","CELEBRATE",1], ["💪","STRONG"], ["🙌","PROUD"],
+          ["✏️","WRITE"], ["🔔","REMINDER"], ["🧘","CALM"], ["👏","APPLAUSE"],
+          ["🌟","SHINE",1], ["💥","BOOM"], ["🌈","HOPE"], ["😃","HAPPY"]
+        ]
+      },
+      {
+        title: "2. Subjects & Exam Tags",
+        type: "badge",
+        cols: 6,
+        items: [
+          ["🔬","SCIENCE"], ["📐","MATHS"], ["🧩","REASONING"], ["🌍","GK / GS"],
+          ["📖","ENGLISH"], ["📰","CURR. AFFAIRS"], ["📝","MOCK TEST",1], ["📄","PYQ PAPER",1],
+          ["📊","FULL MOCK"], ["🎯","CH. TEST"], ["🔁","REVISION",1], ["🧠","FORMULA"],
+          ["💻","COMPUTER"], ["🏛️","POLITY"], ["📜","HISTORY"], ["🗺️","GEOGRAPHY"],
+          ["⚖️","LAW"], ["💰","ECONOMY"], ["🧪","CHEMISTRY"], ["🧬","BIOLOGY"]
+        ]
+      },
+      {
+        title: "3. Hours & Habits Trackers",
+        type: "square",
+        cols: 8,
+        items: [
+          ["📚","4+ HRS"], ["📚","6+ HRS"], ["📚","8+ HRS",1], ["📚","10+ HRS",1],
+          ["📱","<1 HR"], ["📱","<2 HRS"], ["⏰","5 AM CLUB"], ["🌙","NIGHT STUDY"],
+          ["☕","BREAK"], ["💧","HYDRATE"], ["🏃","HEALTH"], ["🎯","ALL DONE",1],
+          ["🛌","SLEEP 7H+"], ["📵","DIGITAL DETOX"], ["🥗","HEALTHY MEAL"], ["🚶","WALK"],
+          ["🧹","NO DISTRACTION"], ["🧘","MEDITATE"]
+        ]
+      },
+      {
+        title: "4. Priority & Status Tags",
+        type: "circle",
+        cols: 8,
+        items: [
+          ["🔴","HIGH"], ["🟡","MEDIUM"], ["🟢","LOW"], ["⭐","STARRED"],
+          ["🔒","LOCKED IN",1], ["⏳","PENDING"], ["✅","COMPLETE"], ["🔄","IN PROGRESS"],
+          ["🆕","NEW"], ["🗓️","SCHEDULED"], ["❗","URGENT",1], ["💤","SKIPPED"]
+        ]
+      }
+    ];
+
+    const DIMS = {
+      circle: { w: 18, h: 18 },
+      square: { w: 18, h: 18 },
+      badge:  { w: 22, h: 10 }
+    };
+
+    function stickerDiv(type, icon, label, dark) {
+      const cls = "sticker" + (type === "square" ? " square" : type === "badge" ? " badge" : "") + (dark ? " dark" : "");
+      if (type === "badge") {
+        return '<div class="' + cls + '">' + icon + ' ' + label + '</div>';
+      }
+      return '<div class="' + cls + '"><span class="icon">' + icon + '</span><span class="label">' + label + '</span></div>';
+    }
+
+    function buildCatalog() {
+      const catalogView = document.getElementById('catalogView');
+      const picker = document.getElementById('stickerPicker');
+      let html = '';
+      CATEGORIES.forEach((cat, ci) => {
+        html += '<div><div class="section-title">' + cat.title + '</div><div class="sticker-grid" style="grid-template-columns: repeat(' + cat.cols + ', 1fr);">';
+        cat.items.forEach(([icon, label, dark]) => {
+          html += stickerDiv(cat.type, icon, label, dark);
+        });
+        html += '</div></div>';
+
+        const group = document.createElement('optgroup');
+        group.label = cat.title;
+        cat.items.forEach(([icon, label], ii) => {
+          const opt = document.createElement('option');
+          opt.value = ci + '-' + ii;
+          opt.textContent = icon + ' ' + label;
+          group.appendChild(opt);
+        });
+        picker.appendChild(group);
+      });
+      catalogView.innerHTML = html;
+    }
+
+    function showSingle() {
+      const [ci, ii] = document.getElementById('stickerPicker').value.split('-').map(Number);
+      const cat = CATEGORIES[ci];
+      const [icon, label, dark] = cat.items[ii];
+      const dim = DIMS[cat.type];
+
+      // work out how many copies fill one A4 portrait page (usable area ~198mm x 283mm)
+      const gap = 4;
+      const usableW = 198, usableH = 283;
+      const cols = Math.max(1, Math.floor(usableW / (dim.w + gap)));
+      const rows = Math.max(1, Math.floor(usableH / (dim.h + gap)));
+      const total = cols * rows;
+
+      const grid = document.getElementById('singleGrid');
+      grid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + dim.w + 'mm)';
+      grid.style.gap = gap + 'mm';
+      let html = '';
+      for (let i = 0; i < total; i++) {
+        html += stickerDiv(cat.type, icon, label, dark);
+      }
+      grid.innerHTML = html;
+      document.getElementById('singleHeading').textContent = 'Full page: ' + icon + ' ' + label + '  (' + total + ' copies)';
+
+      document.getElementById('catalogView').style.display = 'none';
+      document.getElementById('singleView').style.display = 'block';
+      document.getElementById('backBtn').style.display = 'inline-block';
+      document.getElementById('printSingleBtn').style.display = 'inline-block';
+      document.getElementById('catalogControls').style.display = 'none';
+    }
+
+    function showCatalog() {
+      document.getElementById('catalogView').style.display = 'flex';
+      document.getElementById('singleView').style.display = 'none';
+      document.getElementById('backBtn').style.display = 'none';
+      document.getElementById('printSingleBtn').style.display = 'none';
+      document.getElementById('catalogControls').style.display = 'inline';
+    }
+
+    buildCatalog();
+  <\/script>
 </body>
 </html>`;
       stickerWindow.document.write(stickerHtml);
