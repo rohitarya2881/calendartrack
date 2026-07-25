@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Monthly Productivity Planner & Expanded Sticker Generator</title>
+  <style>
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #000;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #eef2f5;
+    }
+
+    /* Screen-Only Control Panel */
+    .controls {
+      background: #fff;
+      padding: 15px;
+      margin: 20px auto;
+      max-width: 900px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .controls label {
+      font-size: 10pt;
+      font-weight: bold;
+    }
+
+    .controls select, .controls button {
+      padding: 6px 12px;
+      font-size: 10pt;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .controls button {
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .controls button:hover {
+      background: #333;
+    }
+
+    /* Print Page Styles */
+    @page {
+      size: A4 landscape;
+      margin: 4mm;
+    }
+
+    .page {
+      width: 289mm;
+      height: 200mm;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      margin: 0 auto 20px auto;
+      background: #fff;
+      padding: 4mm;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 2px;
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16pt;
+      letter-spacing: 2px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .legend {
+      font-size: 7pt;
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Calendar Grid */
+    .calendar-container {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin-bottom: 4px;
+    }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border-top: 1.5px solid #000;
+      border-left: 1.5px solid #000;
+      background: #f4f4f4;
+    }
+
+    .weekday {
+      border-right: 1.5px solid #000;
+      border-bottom: 1.5px solid #000;
+      text-align: center;
+      padding: 2px 0;
+      font-size: 7.5pt;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      /* grid-template-rows is set dynamically in JS since a month can need 5 or 6 rows */
+      flex: 1;
+      border-left: 1.5px solid #000;
+    }
+
+    /* Individual Calendar Box */
+    .day-box {
+      border-right: 1.5px solid #000;
+      border-bottom: 1.5px solid #000;
+      padding: 4px 5px 3px 5px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .day-box.empty {
+      background: #fafafa;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #999;
+      padding-bottom: 2px;
+      margin-bottom: 3px;
+      flex: 0 0 auto;
+    }
+
+    .day-num {
+      font-weight: bold;
+      font-size: 11pt;
+      line-height: 1;
+    }
+
+    .day-weekday-tag {
+      font-size: 5.5pt;
+      color: #666;
+      letter-spacing: 0.5px;
+    }
+
+    /* Metrics: each row is a label + an actual writable underline,
+       sized big enough to fill in a number by hand */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 8px;
+      font-size: 6.5pt;
+      flex: 0 0 auto;
+      margin-bottom: 3px;
+    }
+
+    .metric-item {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .metric-item .m-label {
+      font-weight: bold;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .metric-item .m-line {
+      flex: 1;
+      border-bottom: 1px solid #999;
+      height: 11px;
+    }
+
+    .notes-area {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 3px;
+    }
+
+    .note-line {
+      border-bottom: 1px dotted #bbb;
+      flex: 1;
+      min-height: 8px;
+    }
+
+    .score-check {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 6pt;
+      border-top: 1px dashed #ccc;
+      padding-top: 2px;
+      margin-top: 3px;
+      flex: 0 0 auto;
+    }
+
+    .checkbox {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border: 1px solid #000;
+      vertical-align: middle;
+    }
+
+    /* Bottom Summary Strip */
+    .bottom-review {
+      flex: 0 0 auto;
+      border: 1.5px solid #000;
+      padding: 3px 6px;
+      display: flex;
+      gap: 10px;
+      max-height: 24mm;
+    }
+
+    .stats-panel {
+      width: 35%;
+      border-right: 1px solid #000;
+      padding-right: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stats-title {
+      font-size: 7pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #000;
+      margin-bottom: 2px;
+    }
+
+    .stat-item {
+      font-size: 6.2pt;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat-line {
+      flex: 1;
+      border-bottom: 1px dotted #000;
+      margin: 0 3px 2px 3px;
+    }
+
+    .reflection-panel {
+      width: 65%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+
+    .ref-box {
+      font-size: 6.5pt;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ref-box label {
+      font-weight: bold;
+    }
+
+    .ref-input {
+      border: 1px solid #ccc;
+      flex: 1;
+      min-height: 14px;
+    }
+
+    /* HIDE CONTROLS WHEN PRINTING */
+    @media print {
+      body {
+        background: none;
+      }
+      .controls {
+        display: none !important;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls Panel -->
+  <div class="controls">
+    <div>
+      <label>Year: </label>
+      <select id="yearSelect">
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+        <option value="2029">2029</option>
+        <option value="2030">2030</option>
+      </select>
+    </div>
+
+    <div>
+      <label>From: </label>
+      <select id="startMonth">
+        <option value="0" selected>January</option>
+        <option value="1">February</option>
+        <option value="2">March</option>
+        <option value="3">April</option>
+        <option value="4">May</option>
+        <option value="5">June</option>
+        <option value="6">July</option>
+        <option value="7">August</option>
+        <option value="8">September</option>
+        <option value="9">October</option>
+        <option value="10">November</option>
+        <option value="11">December</option>
+      </select>
+    </div>
+
+    <div>
+      <label>To: </label>
+      <select id="endMonth">
+        <option value="0">January</option>
+        <option value="1">February</option>
+        <option value="2">March</option>
+        <option value="3">April</option>
+        <option value="4">May</option>
+        <option value="5" selected>June</option>
+        <option value="6">July</option>
+        <option value="7">August</option>
+        <option value="8">September</option>
+        <option value="9">October</option>
+        <option value="10">November</option>
+        <option value="11">December</option>
+      </select>
+    </div>
+
+    <button onclick="generatePages()">Generate Pages</button>
+    <button onclick="window.print()" style="background:#28a745;">🖨️ Print Planner</button>
+    <button onclick="openStickerSheet()" style="background:#6f42c1;">🏷️ Print 60+ Stickers Sheet</button>
+  </div>
+
+  <!-- Container for Pages -->
+  <div id="calendarOutput"></div>
+
+  <script>
+    const monthNames = [
+      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+      "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+    ];
+
+    function generatePages() {
+      const year = parseInt(document.getElementById('yearSelect').value);
+      const startM = parseInt(document.getElementById('startMonth').value);
+      const endM = parseInt(document.getElementById('endMonth').value);
+      const container = document.getElementById('calendarOutput');
+
+      if (startM > endM) {
+        alert("Start month cannot be after End month!");
+        return;
+      }
+
+      container.innerHTML = '';
+
+      for (let m = startM; m <= endM; m++) {
+        const daysInMonth = new Date(year, m + 1, 0).getDate();
+        let firstDayIndex = new Date(year, m, 1).getDay();
+        let startOffset = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
+
+        // Number of rows needed (5 or 6) depends on how the month falls
+        let totalSlots = (startOffset + daysInMonth > 35) ? 42 : 35;
+        let numRows = totalSlots / 7;
+
+        let pageHtml = `
+          <div class="page">
+            <header>
+              <h1>${monthNames[m]} ${year}</h1>
+              <div class="legend">
+                <b>ST:</b> Screen Time | <b>SH:</b> Study Hours | <b>MS:</b> Mock Score | <b>TC:</b> Tasks Done
+              </div>
+            </header>
+
+            <div class="calendar-container">
+              <div class="weekdays">
+                <div class="weekday">MON</div>
+                <div class="weekday">TUE</div>
+                <div class="weekday">WED</div>
+                <div class="weekday">THU</div>
+                <div class="weekday">FRI</div>
+                <div class="weekday">SAT</div>
+                <div class="weekday">SUN</div>
+              </div>
+              <div class="days-grid" style="grid-template-rows: repeat(${numRows}, 1fr);">
+        `;
+
+        for (let i = 0; i < startOffset; i++) {
+          pageHtml += `<div class="day-box empty"></div>`;
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          let dayStr = d < 10 ? '0' + d : d;
+          pageHtml += `
+            <div class="day-box">
+              <div class="day-header">
+                <span class="day-num">${dayStr}</span>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-item"><span class="m-label">ST</span><span class="m-line"></span></div>
+                <div class="metric-item"><span class="m-label">SH</span><span class="m-line"></span></div>
+                <div class="metric-item"><span class="m-label">MS</span><span class="m-line"></span></div>
+                <div class="metric-item"><span class="m-label">TC</span><span class="m-line"></span></div>
+              </div>
+              <div class="notes-area">
+                <div class="note-line"></div>
+                <div class="note-line"></div>
+                <div class="note-line"></div>
+              </div>
+              <div class="score-check">
+                <span>🟢 <span class="checkbox"></span></span>
+                <span>🟡 <span class="checkbox"></span></span>
+                <span>🔴 <span class="checkbox"></span></span>
+              </div>
+            </div>
+          `;
+        }
+
+        let remaining = totalSlots - (startOffset + daysInMonth);
+        for (let i = 0; i < remaining; i++) {
+          pageHtml += `<div class="day-box empty"></div>`;
+        }
+
+        pageHtml += `
+              </div>
+            </div>
+
+            <div class="bottom-review">
+              <div class="stats-panel">
+                <div class="stats-title">Monthly Summary</div>
+                <div class="stat-item"><span>Total SH:</span><div class="stat-line"></div></div>
+                <div class="stat-item"><span>Avg ST:</span><div class="stat-line"></div></div>
+                <div class="stat-item"><span>Avg MS:</span><div class="stat-line"></div></div>
+                <div class="stat-item"><span>Green/Red Days:</span><div class="stat-line"></div></div>
+              </div>
+
+              <div class="reflection-panel">
+                <div class="ref-box"><label>Biggest Win:</label><div class="ref-input"></div></div>
+                <div class="ref-box"><label>Biggest Distraction:</label><div class="ref-input"></div></div>
+                <div class="ref-box"><label>Lessons Learned:</label><div class="ref-input"></div></div>
+                <div class="ref-box"><label>Goals for Next Month:</label><div class="ref-input"></div></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.innerHTML += pageHtml;
+      }
+    }
+
+    function openStickerSheet() {
+      const stickerWindow = window.open('', '_blank');
+      const stickerHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ultimate Productivity & Study Sticker Pack</title>
+  <style>
+    @page { size: A4 portrait; margin: 6mm; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #000; }
+    body { margin: 0; padding: 0; background: #fff; }
+    .no-print { text-align: center; padding: 12px; background: #f8f9fa; border-bottom: 1px solid #ddd; margin-bottom: 10px; }
+    .no-print button { padding: 8px 16px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
+    .sheet { width: 196mm; margin: 0 auto; padding: 2mm; display: flex; flex-direction: column; gap: 6mm; }
+    .section-title { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 2px; margin-bottom: 6px; }
+    .sticker-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+    .sticker { width: 18mm; height: 18mm; border: 1px dashed #aaa; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .sticker.square { border-radius: 4px; }
+    .sticker.badge { width: 22mm; height: 10mm; border-radius: 8px; border: 1.5px solid #000; font-size: 6pt; font-weight: bold; letter-spacing: 0.3px; }
+    .icon { font-size: 10pt; line-height: 1; }
+    .label { font-size: 4.5pt; font-weight: bold; margin-top: 1px; text-transform: uppercase; }
+    .sticker.dark { background: #000; color: #fff; border: none; }
+    .sticker.dark * { color: #fff; }
+    @media print { .no-print { display: none !important; } .sheet { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()">🖨️ Print 60+ Stickers (A4 Label Paper)</button>
+  </div>
+  <div class="sheet">
+    <div>
+      <div class="section-title">1. Evaluation & Reaction Icons</div>
+      <div class="sticker-grid">
+        <div class="sticker"><span class="icon">👍</span><span class="label">GOOD</span></div>
+        <div class="sticker dark"><span class="icon">💯</span><span class="label">PERFECT</span></div>
+        <div class="sticker"><span class="icon">✅</span><span class="label">DONE</span></div>
+        <div class="sticker"><span class="icon">❌</span><span class="label">FAIL</span></div>
+        <div class="sticker"><span class="icon">🎯</span><span class="label">TARGET</span></div>
+        <div class="sticker dark"><span class="icon">🔥</span><span class="label">STREAK</span></div>
+        <div class="sticker"><span class="icon">⭐</span><span class="label">WIN</span></div>
+        <div class="sticker"><span class="icon">🏆</span><span class="label">TOP SCORE</span></div>
+        <div class="sticker"><span class="icon">⚠️</span><span class="label">MISTAKE</span></div>
+        <div class="sticker"><span class="icon">🚫</span><span class="label">NO PHONE</span></div>
+        <div class="sticker"><span class="icon">📌</span><span class="label">FOCUS</span></div>
+        <div class="sticker"><span class="icon">💡</span><span class="label">REVISE</span></div>
+        <div class="sticker"><span class="icon">⌛</span><span class="label">TIMED</span></div>
+        <div class="sticker"><span class="icon">📈</span><span class="label">GROWTH</span></div>
+        <div class="sticker"><span class="icon">⚡</span><span class="label">FAST</span></div>
+        <div class="sticker dark"><span class="icon">👑</span><span class="label">BEST DAY</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">2. Subjects & Exam Tags</div>
+      <div class="sticker-grid" style="grid-template-columns: repeat(6, 1fr);">
+        <div class="sticker badge">🔬 SCIENCE</div>
+        <div class="sticker badge">📐 MATHS</div>
+        <div class="sticker badge">🧩 REASONING</div>
+        <div class="sticker badge">🌍 GK / GS</div>
+        <div class="sticker badge">📖 ENGLISH</div>
+        <div class="sticker badge">📰 CURR. AFFAIRS</div>
+        <div class="sticker badge dark">📝 MOCK TEST</div>
+        <div class="sticker badge dark">📄 PYQ PAPER</div>
+        <div class="sticker badge">📊 FULL MOCK</div>
+        <div class="sticker badge">🎯 CH. TEST</div>
+        <div class="sticker badge dark">🔁 REVISION</div>
+        <div class="sticker badge">🧠 FORMULA</div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">3. Hours & Habits Trackers</div>
+      <div class="sticker-grid">
+        <div class="sticker square"><span class="icon">📚</span><span class="label">4+ HRS</span></div>
+        <div class="sticker square"><span class="icon">📚</span><span class="label">6+ HRS</span></div>
+        <div class="sticker square dark"><span class="icon">📚</span><span class="label">8+ HRS</span></div>
+        <div class="sticker square dark"><span class="icon">📚</span><span class="label">10+ HRS</span></div>
+        <div class="sticker square"><span class="icon">📱</span><span class="label">&lt;1 HR</span></div>
+        <div class="sticker square"><span class="icon">📱</span><span class="label">&lt;2 HRS</span></div>
+        <div class="sticker square"><span class="icon">⏰</span><span class="label">5 AM CLUB</span></div>
+        <div class="sticker square"><span class="icon">🌙</span><span class="label">NIGHT STUDY</span></div>
+        <div class="sticker square"><span class="icon">☕</span><span class="label">BREAK</span></div>
+        <div class="sticker square"><span class="icon">💧</span><span class="label">HYDRATE</span></div>
+        <div class="sticker square"><span class="icon">🏃</span><span class="label">HEALTH</span></div>
+        <div class="sticker square dark"><span class="icon">🎯</span><span class="label">ALL DONE</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+      stickerWindow.document.write(stickerHtml);
+      stickerWindow.document.close();
+    }
+
+    window.onload = generatePages;
+  </script>
+</body>
+</html>
