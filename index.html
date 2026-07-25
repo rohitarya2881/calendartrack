@@ -497,14 +497,14 @@
   <style>
     @page { size: A4 portrait; margin: 6mm; }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #000; }
-    body { margin: 0; padding: 0; background: #fff; }
+    body { margin: 0; padding: 0; background: #eef2f5; }
     .no-print { text-align: center; padding: 12px; background: #f8f9fa; border-bottom: 1px solid #ddd; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
     .no-print button { padding: 8px 16px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 9.5pt; }
     .no-print button.secondary { background: #6f42c1; }
     .no-print button.ghost { background: #666; }
-    .no-print select { padding: 7px 10px; font-size: 9.5pt; border: 1px solid #ccc; border-radius: 4px; max-width: 260px; }
-    .no-print label { font-size: 9.5pt; font-weight: bold; }
-    .sheet { width: 196mm; margin: 0 auto; padding: 2mm; display: flex; flex-direction: column; gap: 6mm; }
+    .no-print input[type=number] { width: 55px; padding: 6px; font-size: 9.5pt; border: 1px solid #ccc; border-radius: 4px; }
+    .no-print label.field { font-size: 9.5pt; font-weight: bold; }
+    .sheet { width: 196mm; margin: 0 auto; padding: 2mm; display: flex; flex-direction: column; gap: 6mm; background: #fff; }
     .section-title { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 2px; margin-bottom: 6px; }
     .sticker-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
     .sticker { width: 18mm; height: 18mm; border: 1px dashed #aaa; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -514,34 +514,57 @@
     .label { font-size: 4.5pt; font-weight: bold; margin-top: 1px; text-transform: uppercase; }
     .sticker.dark { background: #000; color: #fff; border: none; }
     .sticker.dark * { color: #fff; }
-    #singleView { display: none; }
-    .single-heading { text-align: center; font-size: 9pt; font-weight: bold; margin: 4mm 0; text-transform: uppercase; letter-spacing: 1px; }
-    .single-grid { display: grid; justify-content: center; align-content: center; }
+
+    #builderView, #customSheetView { display: none; }
+
+    /* Builder checklist */
+    .builder-wrap { width: 196mm; margin: 0 auto; background: #fff; padding: 4mm; }
+    .builder-cat-title { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 2px; margin: 10px 0 6px 0; }
+    .builder-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 10px; }
+    .builder-row { display: flex; align-items: center; gap: 5px; font-size: 8pt; border: 1px solid #eee; border-radius: 4px; padding: 4px 6px; }
+    .builder-row.active { border-color: #6f42c1; background: #f7f3ff; }
+    .builder-row .b-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .summary-bar { position: sticky; top: 0; background: #fff3cd; border: 1.5px solid #000; border-radius: 6px; padding: 8px 14px; margin: 10px auto; width: 196mm; font-size: 9.5pt; font-weight: bold; display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .summary-bar span.hint { font-weight: normal; color: #555; }
+
+    .custom-page { page-break-after: always; width: 196mm; margin: 0 auto 20px auto; background: #fff; padding: 4mm; box-shadow: 0 0 10px rgba(0,0,0,0.15); }
+    .custom-page:last-child { page-break-after: avoid; }
+    .custom-grid { display: grid; justify-content: center; }
+    .custom-page-label { text-align: center; font-size: 7.5pt; color: #888; margin-bottom: 4px; }
+
     @media print {
       .no-print { display: none !important; }
+      .summary-bar { display: none !important; }
+      body { background: #fff; }
       .sheet { padding: 0; }
-      .single-heading { display: none; }
-      #catalogView.hide-for-print { display: none; }
+      .custom-page { margin: 0; box-shadow: none; padding: 0; }
+      .custom-page-label { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="no-print">
-    <span id="catalogControls">
-      <button onclick="window.print()">🖨️ Print Full Catalog</button>
-    </span>
-    <label>Pick a sticker:</label>
-    <select id="stickerPicker"></select>
-    <button class="secondary" onclick="showSingle()">🔁 Fill Whole Page With It</button>
-    <button class="ghost" id="backBtn" style="display:none;" onclick="showCatalog()">📋 Back to Catalog</button>
-    <button class="secondary" id="printSingleBtn" style="display:none;" onclick="window.print()">🖨️ Print This Page</button>
+  <div class="no-print" id="topControls">
+    <button id="btnPrintCatalog" onclick="window.print()">🖨️ Print Full Catalog</button>
+    <button class="secondary" id="btnGoBuilder" onclick="showBuilder()">🧩 Build Custom Print Sheet (pick stickers & counts)</button>
+    <button class="ghost" id="btnBackCatalog" style="display:none;" onclick="showCatalog()">📋 Back to Catalog</button>
+    <button class="ghost" id="btnBackBuilder" style="display:none;" onclick="showBuilder()">🧩 Back to Builder</button>
+    <button class="secondary" id="btnPrintCustom" style="display:none;" onclick="window.print()">🖨️ Print This Sheet</button>
   </div>
 
   <div id="catalogView" class="sheet"></div>
-  <div id="singleView">
-    <div class="single-heading" id="singleHeading"></div>
-    <div class="single-grid" id="singleGrid"></div>
+
+  <div id="builderView">
+    <div class="summary-bar" id="summaryBar">Select stickers below and set how many of each you want.</div>
+    <div class="builder-wrap" id="builderWrap"></div>
+    <div class="no-print" style="margin: 14px 0 30px 0;">
+      <label class="field">Or just set total pages:</label>
+      <input type="number" id="desiredPages" min="1" value="1">
+      <button class="secondary" onclick="autoDistribute()">⚖️ Auto-fill Selected Evenly</button>
+      <button onclick="generateCustomSheet()" style="background:#28a745;">✅ Generate My Sheet</button>
+    </div>
   </div>
+
+  <div id="customSheetView"></div>
 
   <script>
     // Sticker catalog data — add more items here anytime, everything below builds itself from this list.
@@ -593,6 +616,17 @@
           ["🔒","LOCKED IN",1], ["⏳","PENDING"], ["✅","COMPLETE"], ["🔄","IN PROGRESS"],
           ["🆕","NEW"], ["🗓️","SCHEDULED"], ["❗","URGENT",1], ["💤","SKIPPED"]
         ]
+      },
+      {
+        title: "5. Time & Efficiency Review Tags",
+        type: "circle",
+        cols: 8,
+        items: [
+          ["⏳","TIME WELL SPENT"], ["🗑️","WASTED DAY",1], ["🕐","PRODUCTIVE DAY"], ["😴","LAZY DAY"],
+          ["⌚","TIME LEAK"], ["🚨","DISTRACTED",1], ["🧭","ON TRACK"], ["📉","OFF TRACK"],
+          ["🔋","LOW ENERGY"], ["⚡","HIGH ENERGY"], ["🎯","GOAL HIT"], ["💤","NO STUDY DAY",1],
+          ["🏖️","PLANNED REST"], ["⏱️","TIME AUDIT"], ["🌀","UNFOCUSED"], ["🧨","PROCRASTINATED",1]
+        ]
       }
     ];
 
@@ -612,67 +646,187 @@
 
     function buildCatalog() {
       const catalogView = document.getElementById('catalogView');
-      const picker = document.getElementById('stickerPicker');
       let html = '';
-      CATEGORIES.forEach((cat, ci) => {
+      CATEGORIES.forEach((cat) => {
         html += '<div><div class="section-title">' + cat.title + '</div><div class="sticker-grid" style="grid-template-columns: repeat(' + cat.cols + ', 1fr);">';
         cat.items.forEach(([icon, label, dark]) => {
           html += stickerDiv(cat.type, icon, label, dark);
         });
         html += '</div></div>';
-
-        const group = document.createElement('optgroup');
-        group.label = cat.title;
-        cat.items.forEach(([icon, label], ii) => {
-          const opt = document.createElement('option');
-          opt.value = ci + '-' + ii;
-          opt.textContent = icon + ' ' + label;
-          group.appendChild(opt);
-        });
-        picker.appendChild(group);
       });
       catalogView.innerHTML = html;
     }
 
-    function showSingle() {
-      const [ci, ii] = document.getElementById('stickerPicker').value.split('-').map(Number);
+    function buildBuilder() {
+      const wrap = document.getElementById('builderWrap');
+      let html = '';
+      CATEGORIES.forEach((cat, ci) => {
+        html += '<div class="builder-cat-title">' + cat.title + '</div><div class="builder-grid">';
+        cat.items.forEach(([icon, label], ii) => {
+          const id = ci + '-' + ii;
+          html += '<div class="builder-row" id="row-' + id + '">' +
+                    '<input type="checkbox" id="chk-' + id + '" onchange="onCheck(\\'' + id + '\\')">' +
+                    '<span class="b-text">' + icon + ' ' + label + '</span>' +
+                    '<input type="number" min="0" value="0" id="qty-' + id + '" oninput="onQty(\\'' + id + '\\')">' +
+                  '</div>';
+        });
+        html += '</div>';
+      });
+      wrap.innerHTML = html;
+    }
+
+    function getItem(id) {
+      const [ci, ii] = id.split('-').map(Number);
       const cat = CATEGORIES[ci];
       const [icon, label, dark] = cat.items[ii];
-      const dim = DIMS[cat.type];
+      return { icon, label, dark: !!dark, type: cat.type };
+    }
 
-      // work out how many copies fill one A4 portrait page (usable area ~198mm x 283mm)
+    function onCheck(id) {
+      const chk = document.getElementById('chk-' + id);
+      const qty = document.getElementById('qty-' + id);
+      if (chk.checked && Number(qty.value) === 0) qty.value = 10;
+      if (!chk.checked) qty.value = 0;
+      syncRow(id);
+      updateSummary();
+    }
+
+    function onQty(id) {
+      const qty = document.getElementById('qty-' + id);
+      const chk = document.getElementById('chk-' + id);
+      chk.checked = Number(qty.value) > 0;
+      syncRow(id);
+      updateSummary();
+    }
+
+    function syncRow(id) {
+      const row = document.getElementById('row-' + id);
+      const chk = document.getElementById('chk-' + id);
+      row.classList.toggle('active', chk.checked);
+    }
+
+    function getSelected() {
+      const selected = [];
+      CATEGORIES.forEach((cat, ci) => {
+        cat.items.forEach((item, ii) => {
+          const id = ci + '-' + ii;
+          const qty = Number(document.getElementById('qty-' + id).value) || 0;
+          if (qty > 0) selected.push({ id, qty, ...getItem(id) });
+        });
+      });
+      return selected;
+    }
+
+    function capacityFor(selected) {
+      if (selected.length === 0) return { cols: 0, rows: 0, perPage: 0 };
+      const maxW = Math.max(...selected.map(s => DIMS[s.type].w));
+      const maxH = Math.max(...selected.map(s => DIMS[s.type].h));
       const gap = 4;
-      const usableW = 198, usableH = 283;
-      const cols = Math.max(1, Math.floor(usableW / (dim.w + gap)));
-      const rows = Math.max(1, Math.floor(usableH / (dim.h + gap)));
-      const total = cols * rows;
+      const cols = Math.max(1, Math.floor(198 / (maxW + gap)));
+      const rows = Math.max(1, Math.floor(283 / (maxH + gap)));
+      return { cols, rows, perPage: cols * rows, maxW, maxH, gap };
+    }
 
-      const grid = document.getElementById('singleGrid');
-      grid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + dim.w + 'mm)';
-      grid.style.gap = gap + 'mm';
-      let html = '';
-      for (let i = 0; i < total; i++) {
-        html += stickerDiv(cat.type, icon, label, dark);
+    function updateSummary() {
+      const selected = getSelected();
+      const bar = document.getElementById('summaryBar');
+      if (selected.length === 0) {
+        bar.innerHTML = 'Select stickers below and set how many of each you want.';
+        return;
       }
-      grid.innerHTML = html;
-      document.getElementById('singleHeading').textContent = 'Full page: ' + icon + ' ' + label + '  (' + total + ' copies)';
+      const total = selected.reduce((s, i) => s + i.qty, 0);
+      const cap = capacityFor(selected);
+      const pages = Math.ceil(total / cap.perPage);
+      bar.innerHTML =
+        selected.length + ' sticker type' + (selected.length > 1 ? 's' : '') + ' selected &nbsp;|&nbsp; ' +
+        'Total copies: ' + total + ' &nbsp;|&nbsp; ' +
+        'Fits ~' + cap.perPage + ' per page &nbsp;|&nbsp; ' +
+        '<span style="color:#6f42c1;">Pages needed: ' + pages + '</span>' +
+        '<span class="hint"> (some pages may mix 2–3 sticker types depending on leftovers)</span>';
+    }
+
+    function autoDistribute() {
+      const selected = getSelected().length > 0 ? getSelected() : [];
+      // if nothing has a qty yet, fall back to whatever is checked with qty 0 reset to at least 1 each
+      let ids = [];
+      CATEGORIES.forEach((cat, ci) => cat.items.forEach((item, ii) => {
+        const id = ci + '-' + ii;
+        if (document.getElementById('chk-' + id).checked) ids.push(id);
+      }));
+      if (ids.length === 0) { alert('Pehle kam se kam ek sticker select karo (checkbox tick karo).'); return; }
+
+      const items = ids.map(id => ({ id, ...getItem(id) }));
+      const cap = capacityFor(items);
+      const pages = Math.max(1, Number(document.getElementById('desiredPages').value) || 1);
+      const totalCapacity = pages * cap.perPage;
+      const base = Math.floor(totalCapacity / ids.length);
+      const remainder = totalCapacity - base * ids.length;
+      ids.forEach((id, idx) => {
+        const qty = base + (idx < remainder ? 1 : 0);
+        document.getElementById('qty-' + id).value = qty;
+      });
+      updateSummary();
+    }
+
+    function generateCustomSheet() {
+      const selected = getSelected();
+      if (selected.length === 0) { alert('Pehle kam se kam ek sticker choose karo aur uski quantity set karo.'); return; }
+
+      const cap = capacityFor(selected);
+      // build the flat sequence of stickers to place (grouped by type, in the order selected)
+      const sequence = [];
+      selected.forEach(item => {
+        for (let i = 0; i < item.qty; i++) sequence.push(item);
+      });
+
+      const totalPages = Math.ceil(sequence.length / cap.perPage);
+      let html = '';
+      for (let p = 0; p < totalPages; p++) {
+        const pageItems = sequence.slice(p * cap.perPage, (p + 1) * cap.perPage);
+        html += '<div class="custom-page">';
+        html += '<div class="custom-page-label">Page ' + (p + 1) + ' of ' + totalPages + ' &mdash; ' + pageItems.length + ' stickers</div>';
+        html += '<div class="custom-grid" style="grid-template-columns: repeat(' + cap.cols + ', ' + cap.maxW + 'mm); gap: ' + cap.gap + 'mm;">';
+        pageItems.forEach(it => { html += stickerDiv(it.type, it.icon, it.label, it.dark); });
+        html += '</div></div>';
+      }
+
+      document.getElementById('customSheetView').innerHTML = html;
 
       document.getElementById('catalogView').style.display = 'none';
-      document.getElementById('singleView').style.display = 'block';
-      document.getElementById('backBtn').style.display = 'inline-block';
-      document.getElementById('printSingleBtn').style.display = 'inline-block';
-      document.getElementById('catalogControls').style.display = 'none';
+      document.getElementById('builderView').style.display = 'none';
+      document.getElementById('customSheetView').style.display = 'block';
+      document.getElementById('btnPrintCatalog').style.display = 'none';
+      document.getElementById('btnGoBuilder').style.display = 'none';
+      document.getElementById('btnBackCatalog').style.display = 'none';
+      document.getElementById('btnBackBuilder').style.display = 'inline-block';
+      document.getElementById('btnPrintCustom').style.display = 'inline-block';
+    }
+
+    function showBuilder() {
+      document.getElementById('catalogView').style.display = 'none';
+      document.getElementById('customSheetView').style.display = 'none';
+      document.getElementById('builderView').style.display = 'block';
+      document.getElementById('btnPrintCatalog').style.display = 'none';
+      document.getElementById('btnGoBuilder').style.display = 'none';
+      document.getElementById('btnBackCatalog').style.display = 'inline-block';
+      document.getElementById('btnBackBuilder').style.display = 'none';
+      document.getElementById('btnPrintCustom').style.display = 'none';
+      updateSummary();
     }
 
     function showCatalog() {
       document.getElementById('catalogView').style.display = 'flex';
-      document.getElementById('singleView').style.display = 'none';
-      document.getElementById('backBtn').style.display = 'none';
-      document.getElementById('printSingleBtn').style.display = 'none';
-      document.getElementById('catalogControls').style.display = 'inline';
+      document.getElementById('builderView').style.display = 'none';
+      document.getElementById('customSheetView').style.display = 'none';
+      document.getElementById('btnPrintCatalog').style.display = 'inline-block';
+      document.getElementById('btnGoBuilder').style.display = 'inline-block';
+      document.getElementById('btnBackCatalog').style.display = 'none';
+      document.getElementById('btnBackBuilder').style.display = 'none';
+      document.getElementById('btnPrintCustom').style.display = 'none';
     }
 
     buildCatalog();
+    buildBuilder();
   <\/script>
 </body>
 </html>`;
